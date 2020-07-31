@@ -32,26 +32,18 @@ OBJDIR ?= .
 SHARED_OBJDIR := $(OBJDIR)/sharedobjs
 STATIC_OBJDIR := $(OBJDIR)/staticobjs
 OBJS := bpf.o btf.o libbpf.o libbpf_errno.o netlink.o \
-	nlattr.o str_error.o libbpf_probes.o bpf_prog_linfo.o xsk.o \
-	btf_dump.o hashmap.o ringbuf.o bpf_load.o elf_parse.o
+	nlattr.o str_error.o libbpf_probes.o   \
+	 hashmap.o  bpf_load.o elf_parse.o
 SHARED_OBJS := $(addprefix $(SHARED_OBJDIR)/,$(OBJS))
 STATIC_OBJS := $(addprefix $(STATIC_OBJDIR)/,$(OBJS))
 
 STATIC_LIBS := $(OBJDIR)/libbpf.a
-#ifndef BUILD_STATIC_ONLY
-#	SHARED_LIBS := $(OBJDIR)/libbpf.so \
-		       $(OBJDIR)/libbpf.so.$(LIBBPF_MAJOR_VERSION) \
-		       $(OBJDIR)/libbpf.so.$(LIBBPF_VERSION)
-#	VERSION_SCRIPT := libbpf.map
-#endif
 
-HEADERS := bpf.h libbpf.h btf.h xsk.h libbpf_util.h \
-	   bpf_helpers.h bpf_helper_defs.h bpf_tracing.h \
-	   bpf_endian.h bpf_core_read.h libbpf_common.h bpf_load.h
+HEADERS := bpf.h libbpf.h btf.h  libbpf_util.h \
+	    	   bpf_endian.h  libbpf_common.h bpf_load.h
 UAPI_HEADERS := $(addprefix $(TOPDIR)/include/uapi/linux/,\
 			    bpf.h bpf_common.h btf.h)
 
-#PC_FILE := $(OBJDIR)/libbpf.pc
 
 INSTALL = install
 
