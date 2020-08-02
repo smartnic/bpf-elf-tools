@@ -121,7 +121,7 @@ install_pkgconfig: $(PC_FILE)
 	$(call do_install,$(PC_FILE),$(LIBDIR)/pkgconfig,644)
 
 clean:
-	rm -rf *.o *.a *.so *.so.* *.pc elf_parse $(SHARED_OBJDIR) $(STATIC_OBJDIR)
+	rm -rf *.o *.a *.so *.so.* *.pc *.maps *.ins elf_parse $(SHARED_OBJDIR) $(STATIC_OBJDIR)
 
 .PHONY: cscope tags
 cscope:

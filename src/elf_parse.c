@@ -33,8 +33,8 @@ int main (int argc, char ** argv)
 
     if (load_bpf_file(filename)) {
 
-	printf("Program load failed\n");
-	return 1;
+    	printf("Program load failed\n");
+    	return 1;
     }
     printf("Load success\n");
 
@@ -50,9 +50,7 @@ int main (int argc, char ** argv)
             fix_progname(progname, fixed_progname);
             prepend_ins_path(fixed_progname, full_progname);
             write_insns(&prog_insns, prog_len, full_progname);
-            read_insns(full_progname);
         }
-
         fix_progname(progname, fixed_progname);
         prepend_map_path(fixed_progname, full_progname);
      	interpret_maps(&map_data, nr_map);
@@ -149,14 +147,14 @@ void fix_progname(char* progname, char* fixed_progname)
 void prepend_ins_path(char* progname, char* full_progname) 
 {
     char buf[60];
-    snprintf(buf, 60, "../out/%s.ins", progname); 
+    snprintf(buf, 60, "%s.ins", progname); 
     strcpy(full_progname, buf);
 
 }
 void prepend_map_path(char* progname, char* full_progname) 
 {
     char buf[60];
-    snprintf(buf, 60, "../out/%s.maps", progname); 
+    snprintf(buf, 60, "%s.maps", progname); 
     strcpy(full_progname, buf);
 
 }
