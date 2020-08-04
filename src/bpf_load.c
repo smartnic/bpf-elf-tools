@@ -43,7 +43,6 @@ struct bpf_map_data map_data[MAX_MAPS];
 int map_data_count;
 int MAP_FD = 0;
 
-
 static int write_kprobe_events(const char *val)
 {
 	int fd, ret, flags;
@@ -364,6 +363,7 @@ static int do_load_bpf_file(const char *path, fixup_map_cb fixup_map)
 		nr_maps = load_elf_maps_section(map_data, maps_shndx,
 						elf, symbols, strtabidx);
 		if (nr_maps < 0) {
+			printf("Error: Failed loading ELF maps (errno:%d):%s\n",
 			       nr_maps, strerror(-nr_maps));
 			goto done;
 		}
@@ -458,25 +458,21 @@ int get_prog(const char *path,  char *progname, int progname_len,
 
 	fd = open(path, O_RDONLY, 0);
 	if (fd < 0) {
-
 		return 1;
     }
 
 	elf = elf_begin(fd, ELF_C_READ, NULL);
 
 	if (!elf) {
-
 		return 1;
     }
 
 	if (gelf_getehdr(elf, &ehdr) != &ehdr) {
-
 		return 1;
     }
 
 	/* clear all kprobes */
 	i = write_kprobe_events("");
-    int found = 0;
 	/* scan over all elf sections to get license and map info */
 	for (i = 1; i < ehdr.e_shnum; i++) {
 
@@ -607,7 +603,6 @@ int get_prog(const char *path,  char *progname, int progname_len,
 		    memcmp(shname, "sockops", 7) == 0 ||
 		    memcmp(shname, "sk_skb", 6) == 0 ||
 		    memcmp(shname, "sk_msg", 6) == 0) {
-            ret = 0;
 			if (ret != 0)
 				goto done;
 		}
@@ -630,49 +625,17 @@ int load_bpf_file_fixup_map(const char *path, fixup_map_cb fixup_map)
 
 
 
-static int parse_relo_and_apply_old(Elf_Data *data, Elf_Data *symbols,
-				GElf_Shdr *shdr, struct bpf_insn *insn)
-{
-	int i, nrels;
 
-	nrels = shdr->sh_size / shdr->sh_entsize;
-
-	for (i = 0; i < nrels; i++) {
-		GElf_Sym sym;
-		GElf_Rel rel;
-		unsigned int insn_idx;
-
-		gelf_getrel(data, i, &rel);
-
-		insn_idx = rel.r_offset / sizeof(struct bpf_insn);
-
-		gelf_getsym(symbols, GELF_R_SYM(rel.r_info), &sym);
-
-		if (insn[insn_idx].code != (BPF_LD | BPF_IMM | BPF_DW)) {
-			printf("invalid relo for insn[%d].code 0x%x\n",
-			       insn_idx, insn[insn_idx].code);
-			return 1;
-		}
-		insn[insn_idx].src_reg = BPF_PSEUDO_MAP_FD;
-//		insn[insn_idx].imm = map_fd[sym.st_value / sizeof(struct bpf_map_def)];
-
-		insn[insn_idx].imm = map_fd[sym.st_value / sizeof(struct bpf_map_data)];
-	}
-
-	return 0;
-}
-
-
-int get_prog_old(char *path, char *progname,
+int load_prog_without_maps(char *path, char *progname,
              int progname_len, int *prog_len,
              struct bpf_insn** prog )
 {
 	int fd, i;
 	Elf *elf;
 	GElf_Ehdr ehdr;
-	GElf_Shdr shdr, shdr_prog;
-	Elf_Data *data, *data_prog, *symbols = NULL;
-	char *shname, *shname_prog;
+	GElf_Shdr shdr;
+	Elf_Data *data;
+	char *shname; 
 
 	if (elf_version(EV_CURRENT) == EV_NONE)
 		return 1;
@@ -689,62 +652,7 @@ int get_prog_old(char *path, char *progname,
 	if (gelf_getehdr(elf, &ehdr) != &ehdr)
 		return 1;
 
-	/* scan over all elf sections to get license and map info */
-	for (i = 1; i < ehdr.e_shnum; i++) {
-
-		if (get_sec(elf, i, &ehdr, &shname, &shdr, &data))
-			continue;
-
-		if (0) /* helpful for llvm debugging */
-			printf("section %d:%s data %p size %zd link %d flags %d\n",
-			       i, shname, data->d_buf, data->d_size,
-			       shdr.sh_link, (int) shdr.sh_flags);
-
-		if (strcmp(shname, "license") == 0) {
-			processed_sec[i] = true;
-			memcpy(license, data->d_buf, data->d_size);
-		} else if (strcmp(shname, "version") == 0) {
-			processed_sec[i] = true;
-			if (data->d_size != sizeof(int)) {
-				printf("invalid size of version section %zd\n",
-				       data->d_size);
-				return 1;
-			}
-			memcpy(&kern_version, data->d_buf, sizeof(int));
-		} else if (strcmp(shname, "maps") == 0) {
-			processed_sec[i] = true;
-		} else if (shdr.sh_type == SHT_SYMTAB) {
-			symbols = data;
-		}
-	}
-
-	/* load programs that need map fixup (relocations) */
-	for (i = 1; i < ehdr.e_shnum; i++) {
-		if (get_sec(elf, i, &ehdr, &shname, &shdr, &data))
-			continue;
-		if (shdr.sh_type == SHT_REL) {
-			struct bpf_insn *insns;
-
-			if (get_sec(elf, shdr.sh_info, &ehdr, &shname_prog,
-				    &shdr_prog, &data_prog))
-				continue;
-
-			insns = (struct bpf_insn *) data_prog->d_buf;
-
-			processed_sec[shdr.sh_info] = true;
-			processed_sec[i] = true;
-
-			if (parse_relo_and_apply_old(data, symbols, &shdr, insns))
-				continue;
-      if (memcmp(shname_prog, progname, progname_len) == 0) {
-        *prog_len = data_prog->d_size;
-        *prog = insns;
-        return 0;
-      }
-		}
-	}
-
-	/* load programs that don't use maps */
+	// load programs that don't use maps 
 	for (i = 1; i < ehdr.e_shnum; i++) {
 
 		if (processed_sec[i])

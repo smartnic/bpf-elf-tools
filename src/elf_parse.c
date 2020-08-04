@@ -34,13 +34,11 @@ int main (int argc, char ** argv)
 
     if ((ret = get_prog(filename, progname, strlen(progname),  &prog_insns, &map_data, &prog_len, &nr_map))) {
         printf("Initial program load failed: %d\n", ret);
-        if ((ret = get_prog_old(filename, progname, strlen(progname), &prog_len, &prog_insns))) {
+        if ((ret = load_prog_without_maps(filename, progname, strlen(progname), &prog_len, &prog_insns))) {
             printf("Failed again\n");
             return ret;
         }
     }
-    printf("Num maps: %d\n", nr_map);
-    printf("Prog len: %d\n", prog_len);
     if (prog_insns != '\0') {
         interpret_bpf_insns(&prog_insns, prog_len);
         fix_progname(progname, fixed_progname);
@@ -156,7 +154,7 @@ void fix_progname(char* progname, char* fixed_progname)
 void prepend_ins_path(char* progname, char* full_progname) 
 {
     char buf[60];
-    snprintf(buf, 60, "%s.ins", progname); 
+    snprintf(buf, 60, "%s.insns", progname); 
     strcpy(full_progname, buf);
 
 }

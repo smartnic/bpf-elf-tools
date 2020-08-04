@@ -56,6 +56,6 @@ int load_bpf_file_fixup_map(const char *path, fixup_map_cb fixup_map);
 int get_prog(const char *path,  char *progname, int progname_len,
 		struct bpf_insn** prog_insns, struct bpf_map_data** t_map_data, int* prog_len, int* t_nr_maps);
 
-int get_prog_old(char *path, char *progname, int progname_len, int*prog_len, struct bpf_insn** prog);
+int load_prog_without_maps(char *path, char *progname, int progname_len, int*prog_len, struct bpf_insn** prog);
 int bpf_set_link_xdp_fd(int ifindex, int fd, __u32 flags);
 #endif
