@@ -31,31 +31,38 @@ int main (int argc, char ** argv)
     struct bpf_map_data* map_data = '\0';
     int prog_len, ret, nr_map;
 
-    if (load_bpf_file(filename)) {
-
-    	printf("Program load failed\n");
-    	return 1;
-    }
-    printf("Load success\n");
 
     if ((ret = get_prog(filename, progname, strlen(progname),  &prog_insns, &map_data, &prog_len, &nr_map))) {
-        printf("Program load failed: %d\n", ret);
-        return ret;
+        printf("Initial program load failed: %d\n", ret);
+        if ((ret = get_prog_old(filename, progname, strlen(progname), &prog_len, &prog_insns))) {
+            printf("Failed again\n");
+            return ret;
+        }
+    }
+    printf("Num maps: %d\n", nr_map);
+    printf("Prog len: %d\n", prog_len);
+    if (prog_insns != '\0') {
+        interpret_bpf_insns(&prog_insns, prog_len);
+        fix_progname(progname, fixed_progname);
+        prepend_ins_path(fixed_progname, full_progname);
+        write_insns(&prog_insns, prog_len, full_progname);
     }
     else {
-     	printf("Num maps: %d\n", nr_map);
-    	printf("Prog len: %d\n", prog_len);
-        if (prog_insns != '\0') {
-        	interpret_bpf_insns(&prog_insns, prog_len);
-            fix_progname(progname, fixed_progname);
-            prepend_ins_path(fixed_progname, full_progname);
-            write_insns(&prog_insns, prog_len, full_progname);
-        }
+        return 1;
+    }
+    if (map_data != '\0') {
         fix_progname(progname, fixed_progname);
         prepend_map_path(fixed_progname, full_progname);
-     	interpret_maps(&map_data, nr_map);
+        interpret_maps(&map_data, nr_map);
         write_maps(&map_data, nr_map, full_progname);
     }
+    else {
+        fix_progname(progname, fixed_progname);
+        prepend_map_path(fixed_progname, full_progname);
+        write_maps('\0', 0, full_progname);
+        return 1;        
+    }
+    
     return 0;
 }
 
@@ -76,14 +83,16 @@ void write_maps(struct bpf_map_data** maps, int nr_map, char* full_progname)
     printf("Writing maps to %s\n", full_progname);
     fp = fopen(full_progname, "w");
 
-    int i;
-    for (i = 0; i < nr_map; i++) {
-        struct bpf_map_data map = (*maps)[i];
-        fprintf(fp, "%s { %s = %d, %s = %u, %s = %u, %s = %u, %s = %d }\n",
-            map.name, "type", map.def.type, "key_size", 
-            map.def.key_size, "value_size", map.def.value_size, 
-            "max_entries", map.def.max_entries, "fd", map.fd); 
-	}
+    if (maps != '\0' && nr_map > 0) {
+        int i;
+        for (i = 0; i < nr_map; i++) {
+            struct bpf_map_data map = (*maps)[i];
+            fprintf(fp, "%s { %s = %d, %s = %u, %s = %u, %s = %u, %s = %d }\n",
+                map.name, "type", map.def.type, "key_size", 
+                map.def.key_size, "value_size", map.def.value_size, 
+                "max_entries", map.def.max_entries, "fd", map.fd); 
+        }
+    }
     fclose(fp);
 }
 
@@ -140,7 +149,7 @@ void fix_progname(char* progname, char* fixed_progname)
         else buf[i] = progname[i];
     }
     buf[strlen(progname)] = '\0';
-    printf("Buf = %s\n", buf);
+    printf("buf = %s\n", buf);
     strcpy(fixed_progname, buf);
 }
  
