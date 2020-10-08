@@ -9,7 +9,7 @@
 
 void interpret_maps(struct bpf_map_data** maps, int nr_map);
 void interpret_bpf_insns (struct bpf_insn**, int);
-void write_insns (struct bpf_insn**, int, char*);
+void write_insns (struct bpf_insn**, int, char*, char*);
 void read_insns(char *); 
 void fix_progname(char *, char *);
 void prepend_ins_path(char *, char *);
@@ -33,9 +33,8 @@ int main (int argc, char ** argv)
 
 
     if ((ret = get_prog(filename, progname, strlen(progname),  &prog_insns, &map_data, &prog_len, &nr_map))) {
-        printf("Initial program load failed: %d\n", ret);
         if ((ret = load_prog_without_maps(filename, progname, strlen(progname), &prog_len, &prog_insns))) {
-            printf("Failed again\n");
+            printf("Program load failed with error code: %d\n", ret);
             return ret;
         }
     }
@@ -43,7 +42,7 @@ int main (int argc, char ** argv)
         interpret_bpf_insns(&prog_insns, prog_len);
         fix_progname(progname, fixed_progname);
         prepend_ins_path(fixed_progname, full_progname);
-        write_insns(&prog_insns, prog_len, full_progname);
+        write_insns(&prog_insns, prog_len, progname, full_progname);
     }
     else {
         return 1;
@@ -101,26 +100,34 @@ void interpret_bpf_insns(struct bpf_insn ** prog, int prog_len)
     for (i = 0; i < prog_len / sizeof(struct bpf_insn); ++i) {
         struct bpf_insn insn = (*prog)[i];
         // op:8, dst_reg:4, src_reg:4, off:16, imm:32
-        printf("%d: op - %02x, src reg - %01x, dst reg - %01x, off - %04x, imm - %08x\t\n", 
+        printf("%d: {%d, %d, %d, %d, %d}\n", 
             i, insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm);
     }
 }
 
-void write_insns(struct bpf_insn ** prog, int prog_len, char* full_progname) 
+void write_insns(struct bpf_insn ** prog, int prog_len, char* progname, char* full_progname) 
 {
-    FILE *fp;
-    printf("Writing to %s\n", full_progname);
+    FILE *bytecode_fp;
+    FILE *insns_fp;
+    char insns_output[60];
+    snprintf(insns_output, 60, "%s.txt", progname); 
 
-    fp = fopen(full_progname, "w");
+    printf("Writing bytecode to %s\n", full_progname);
+    printf("Writing instruction vectors to %s\n", insns_output);
+
+    bytecode_fp = fopen(full_progname, "w");
+    insns_fp = fopen(insns_output, "w");
     int i;
     struct bpf_insn insn;
     for (i = 0; i < prog_len / sizeof(struct bpf_insn); ++i) {
         insn = (*prog)[i];
         struct bpf_insn test_insn = { insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm };
         // op:8, dst_reg:4, src_reg:4, off:16, imm:32
-        fwrite(&test_insn, sizeof(struct bpf_insn), 1, fp);
+        fwrite(&test_insn, sizeof(struct bpf_insn), 1, bytecode_fp);
+        fprintf(insns_fp, "{%d, %d, %d, %d, %d}, \n", insn.code, insn.dst_reg, insn.src_reg, insn.off, insn.imm);
     }
-    fclose(fp); 
+    fclose(bytecode_fp); 
+    fclose(insns_fp);
 }
 
 void read_insns(char* full_progname) 
