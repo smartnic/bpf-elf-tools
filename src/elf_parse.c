@@ -42,7 +42,7 @@ int main (int argc, char ** argv)
         interpret_bpf_insns(&prog_insns, prog_len);
         fix_progname(progname, fixed_progname);
         prepend_ins_path(fixed_progname, full_progname);
-        write_insns(&prog_insns, prog_len, progname, full_progname);
+        write_insns(&prog_insns, prog_len, fixed_progname, full_progname);
     }
     else {
         printf("program insns could not be detected. Is the program name correct?\n");
