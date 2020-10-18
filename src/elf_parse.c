@@ -18,15 +18,17 @@ void write_maps(struct bpf_map_data**, int, char*);
 
 int main (int argc, char ** argv)
 {
-    if (argc != 3) {
-        printf("Usage: elf_parse </path/to/prog.o> <progname>\n");
+    if (argc != 4) {
+        printf("Usage: elf_parse </path/to/prog.o> <progname> <output name>\n");
         return 1;
     }
 
     char* filename = argv[1];
     char* progname = argv[2];
-    char full_progname[50];
-    char fixed_progname[50];
+    char* output_name = argv[3];
+
+    char output_with_extension[50];
+    char fixed_name[50];
     struct bpf_insn* prog_insns = '\0';
     struct bpf_map_data* map_data = '\0';
     int prog_len, ret, nr_map;
@@ -40,24 +42,24 @@ int main (int argc, char ** argv)
     }
     if (prog_insns != '\0') {
         interpret_bpf_insns(&prog_insns, prog_len);
-        fix_progname(progname, fixed_progname);
-        prepend_ins_path(fixed_progname, full_progname);
-        write_insns(&prog_insns, prog_len, fixed_progname, full_progname);
+        fix_progname(output_name, fixed_name);
+        prepend_ins_path(fixed_name, output_with_extension);
+        write_insns(&prog_insns, prog_len, fixed_name, output_with_extension);
     }
     else {
         printf("program insns could not be detected. Is the program name correct?\n");
         return 1;
     }
     if (map_data != '\0') {
-        fix_progname(progname, fixed_progname);
-        prepend_map_path(fixed_progname, full_progname);
+        fix_progname(output_name, fixed_name);
+        prepend_map_path(fixed_name, output_with_extension);
         interpret_maps(&map_data, nr_map);
-        write_maps(&map_data, nr_map, full_progname);
+        write_maps(&map_data, nr_map, output_with_extension);
     }
     else {
-        fix_progname(progname, fixed_progname);
-        prepend_map_path(fixed_progname, full_progname);
-        write_maps('\0', 0, full_progname);
+        fix_progname(output_name, fixed_name);
+        prepend_map_path(fixed_name, output_with_extension);
+        write_maps('\0', 0, output_with_extension);
         return 1;        
     }
     
