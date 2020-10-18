@@ -45,6 +45,7 @@ int main (int argc, char ** argv)
         write_insns(&prog_insns, prog_len, progname, full_progname);
     }
     else {
+        printf("program insns could not be detected. Is the program name correct?\n");
         return 1;
     }
     if (map_data != '\0') {
