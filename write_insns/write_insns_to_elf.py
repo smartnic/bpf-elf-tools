@@ -19,17 +19,20 @@ def read_elf_sections():
             f2.write(byte_array)
             print(ops)
             print (hex(section['sh_addr']), section.name, section['sh_size'])
+
+            print('length of sec: ', len(byte_array))
             offset += section['sh_size']
 
         print('elf header: ', elf._parse_elf_header())
 
         print('Offset = ', offset)
-#        byte = f.read(1)
-#        index = 0
-#        while byte != b"":
-#            byte = f.read(1)
-##            f2.write(byte)
-#            index += 1
+        index = 0
+        byte = 0x0
+        while byte != b"":
+            byte = f.read(1)
+            if index >= offset:
+                f2.write(byte)
+            index += 1
 
 
 #Read first 64 bytes of the ELF which contains the
