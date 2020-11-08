@@ -5,9 +5,9 @@ Creates a new ELF file with new instructions patched into a section of interest.
 
 ### Setup
 
-Install pydevtools
+Install pyelftools
 
-    pip3 install pydevtools
+    pip3 install pyelftools
 
 ### Usage
 
