@@ -9,7 +9,7 @@ Example using sockex1:
 
 To compare the differences, run:
 
-    llvm-objdump-10 -d sockex1_kern.o
+    llvm-objdump-10 -d examples/sockex1_kern.o
 
 and
 
