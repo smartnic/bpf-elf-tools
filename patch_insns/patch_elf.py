@@ -5,8 +5,6 @@ from elftools.elf.elffile import ELFFile
 import array
 import sys
 
-sections_to_extract = ['socket1', 'maps', 'license', '.eh_frame', \
-        '.symtab', '.relsocket1', '.rel.eh_frame', '.strtab']
 
 def patch_insns(output_file, new_insns_file_name):
 
@@ -18,13 +16,14 @@ def patch_insns(output_file, new_insns_file_name):
     output_file.write(byte_array)
 
 def read_elf_sections(elf_file_name, new_insns_file_name, section_to_replace):
+
     offset = 0
     with open(elf_file_name, 'rb') as elf_file:
         output_file = open('./out.o', 'ab')
         elf = ELFFile(elf_file)
-        for section_name in sections_to_extract:
+        for section in elf.iter_sections():
 
-            section = elf.get_section_by_name(section_name) 
+            section_name = section.name
             print('Section: ', section_name)
             if section_name == section_to_replace:
                 patch_insns(output_file, new_insns_file_name)
@@ -64,6 +63,7 @@ def read_elf_file_header(elf_file_name):
         output_file.write(b"")
 
     output_file = open('out.o', 'wb')
+
     with open(elf_file_name, "rb") as elf_file:
         byte = 0x0
         index = 0
@@ -72,18 +72,6 @@ def read_elf_file_header(elf_file_name):
             output_file.write(byte)
             index += 1
     output_file.close()
-
-def initialize_sections(section_name):
-
-    if section_name == 'socket2':
-        sections_to_extract = ['socket2', 'maps', 'license', '.eh_frame', \
-                  '.symtab', '.relsocket2', '.rel.eh_frame', '.strtab']
-    elif section_name == 'socket1':
-         sections_to_extract = ['socket1', 'maps', 'license', '.eh_frame', \
-                  '.symtab', '.relsocket1', '.rel.eh_frame', '.strtab']
-    else:
-         sections_to_extract = [section_name, 'maps', 'license', '.eh_frame', \
-                  '.symtab', '.relsocket1', '.rel.eh_frame', '.strtab']
 
    
 def main():
