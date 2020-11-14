@@ -15,7 +15,7 @@ def patch_insns(output_file, new_insns_file_name):
     byte_array = bytearray(new_insns)
     output_file.write(byte_array)
 
-def read_elf_sections(elf_file_name, new_insns_file_name, section_to_replace):
+def read_elf_sections(elf_file_name, new_insns_file_name, section_to_replace, preceding_sections):
 
     offset = 0
 
@@ -23,15 +23,26 @@ def read_elf_sections(elf_file_name, new_insns_file_name, section_to_replace):
 
         output_file = open('./out.o', 'ab')
         elf = ELFFile(elf_file)
-        section_found = False
-        for section in elf.iter_sections():
-            if section.name == section_to_replace:
-                section_found = True
+        
+        section_of_interest = elf.get_section_by_name(section_to_replace)
+        if section_of_interest is not None:
+            # Usually the program will be in the first section 
+            # of the binary. If not, add preceding section code
+            for section_name in preceding_sections:
+                section = elf.get_section_by_name(section_name)
+                if section is not None:
+                    offset += section['sh_size']
+                    raw_bytes = section.data()
+                    byte_array = bytearray(raw_bytes)
+                    output_file.write(byte_array)
+                else:
+                    print(section_name, ' is not a section in this ELF')
+                    sys.exit(1)
 
-        if section_found:
-            section_of_interest = elf.get_section_by_name(section_to_replace)
             offset += section_of_interest['sh_size']
             patch_insns(output_file, new_insns_file_name)
+        else:
+            print('Section ', section_to_replace, ' could not be found. New insns not patched into resulting ELF')
 
         print('elf header: ', elf._parse_elf_header())
         print('Offset = ', offset)
@@ -71,18 +82,29 @@ def read_elf_file_header(elf_file_name):
             index += 1
     output_file.close()
 
+# Converts preceding section name string to list
+def parse_section_string(section_string):
+    print(section_string)
+    preceding_sections = section_string.split(',')
+    for i in range(0, len(preceding_sections)):
+        preceding_sections[i] = preceding_sections[i].strip()
+    print(preceding_sections)
+    return preceding_sections
    
 def main():
 
     # Bytes in instructions must be equivalent to the number 
     # of bytes in the section of the initial .o file
-
-    if len(sys.argv) != 4:
-        print('Usage: <ELF file> <file w/ new insns> <name of section>')
+    if len(sys.argv) != 4 and len(sys.argv) != 5:
+        print('Usage: <ELF file> <file w/ new insns> <name of section> <preceding section names (OPTIONAL)>')
         sys.exit(1)
 
+    preceding_sections = []
+    if len(sys.argv) == 5:
+        preceding_sections = parse_section_string(sys.argv[4])
+
     read_elf_file_header(sys.argv[1])
-    read_elf_sections(sys.argv[1], sys.argv[2], sys.argv[3])
+    read_elf_sections(sys.argv[1], sys.argv[2], sys.argv[3], preceding_sections)
 
 if __name__ == '__main__':
     main()

@@ -19,6 +19,10 @@ Example using sockex2:
 
     python3 patch_elf.py examples/sockex2_kern.o sample-insns/sockex2.insns socket2
 
+Example using bpf_network:
+    
+    python3 patch_elf.py examples/bpf_network.o sample-insns/bpf_network.insns from-network "2/1"
+
 To compare the differences for sockex1, run:
 
     llvm-objdump-10 -d examples/sockex1_kern.o
