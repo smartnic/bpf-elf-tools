@@ -18,22 +18,20 @@ def patch_insns(output_file, new_insns_file_name):
 def read_elf_sections(elf_file_name, new_insns_file_name, section_to_replace):
 
     offset = 0
+
     with open(elf_file_name, 'rb') as elf_file:
+
         output_file = open('./out.o', 'ab')
         elf = ELFFile(elf_file)
+        section_found = False
         for section in elf.iter_sections():
+            if section.name == section_to_replace:
+                section_found = True
 
-            section_name = section.name
-            print('Section: ', section_name)
-            if section_name == section_to_replace:
-                patch_insns(output_file, new_insns_file_name)
-            else: 
-                raw_bytes = section.data()
-                print(raw_bytes)
-                byte_array = bytearray(raw_bytes)
-                output_file.write(byte_array)
-
-            offset += section['sh_size']
+        if section_found:
+            section_of_interest = elf.get_section_by_name(section_to_replace)
+            offset += section_of_interest['sh_size']
+            patch_insns(output_file, new_insns_file_name)
 
         print('elf header: ', elf._parse_elf_header())
         print('Offset = ', offset)

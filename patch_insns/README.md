@@ -15,7 +15,11 @@ Example using sockex1:
 
     python3 patch_elf.py examples/sockex1_kern.o sample-insns/sockex1.insns socket1
 
-To compare the differences, run:
+Example using sockex2:
+
+    python3 patch_elf.py examples/sockex2_kern.o sample-insns/sockex2.insns socket2
+
+To compare the differences for sockex1, run:
 
     llvm-objdump-10 -d examples/sockex1_kern.o
 
