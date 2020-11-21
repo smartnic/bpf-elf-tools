@@ -11,6 +11,29 @@ Install pyelftools
 
 ### Usage
 
+
+    python3 patch_elf.py -h
+    
+    usage: patch_elf.py [-h] [-s SECTIONS] [-o OUTPUT]
+                        elf_file new_insns section_name
+
+    ELF patcher
+
+    positional arguments:
+      elf_file              ELF input file
+      new_insns             File with new insns to patch in
+      section_name          ELF section to patch
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -s SECTIONS, --sections SECTIONS
+                            Comma-separated list of ELF secitons preceding section
+                            of interest
+      -o OUTPUT, --output OUTPUT
+                            Output file name
+
+
+
 Example using sockex1:
 
     python3 patch_elf.py examples/sockex1_kern.o sample-insns/sockex1.insns socket1
@@ -21,7 +44,7 @@ Example using sockex2:
 
 Example using bpf_network:
     
-    python3 patch_elf.py examples/bpf_network.o sample-insns/bpf_network.insns from-network "2/1"
+    python3 patch_elf.py examples/bpf_network.o sample-insns/bpf_network.insns from-network -s "2/1"
 
 To compare the differences for sockex1, run:
 
