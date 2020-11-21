@@ -43,9 +43,9 @@ def read_elf_sections(elf_file_name, new_insns_file_name, section_to_replace, pr
             patch_insns(output_file, new_insns_file_name)
         else:
             print('Section ', section_to_replace, ' could not be found. New insns not patched into resulting ELF')
+            sys.exit(1)
 
-        print('elf header: ', elf._parse_elf_header())
-        print('Offset = ', offset)
+        elf._parse_elf_header()
 
         write_remaining_bytes(elf_file, output_file, offset)
         output_file.close()
@@ -84,11 +84,9 @@ def read_elf_file_header(elf_file_name):
 
 # Converts preceding section name string to list
 def parse_section_string(section_string):
-    print(section_string)
     preceding_sections = section_string.split(',')
     for i in range(0, len(preceding_sections)):
         preceding_sections[i] = preceding_sections[i].strip()
-    print(preceding_sections)
     return preceding_sections
    
 def main():
