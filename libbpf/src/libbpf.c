@@ -11173,23 +11173,56 @@ void bpf_object__destroy_skeleton(struct bpf_object_skeleton *s)
 	free(s);
 }
 
+int write_insns(char* output_name, int num_insns, struct bpf_insn* insns)
+{
+    int i;
+    char output_insns_file[256];
+    FILE* output_file_fp;
+    snprintf(output_insns_file, 256, "%s.insns", output_name);
+    output_file_fp = fopen(output_insns_file, "w");
+    for (i = 0; i < num_insns; i++) {
+        struct bpf_insn insn = insns[i];
+        fwrite(&insn, sizeof(struct bpf_insn), 1, output_file_fp);
+    }
+    fclose(output_file_fp);
+    return 0;
+}
 
-int extract()
+int write_maps(char* output_name, int num_maps, struct bpf_map* maps) 
+{
+    int i;
+    char output_insns_file[256];
+    FILE* output_file_fp;
+    snprintf(output_insns_file, 256, "%s.maps", output_name);
+    output_file_fp = fopen(output_insns_file, "w");
+    for (i = 0; i < num_maps; i++) {
+        struct bpf_map map = maps[i];
+        char map_string[256];
+        struct bpf_map_def def = map.def;
+        snprintf(map_string, 256, "%s { %s = %d, %s = %u, %s = %u, %s = %u, %s = %d\n", 
+            map.name, "type", def.type, "key_size", def.key_size, "value_size", 
+            def.value_size, "max_entries", def.max_entries, "fd", map.fd);
+        fprintf(output_file_fp, "%s", map_string); 
+    }
+    fclose(output_file_fp);
+    return 0;
+}
+
+int extract(char* file_name, char* prog_name, char* output_name)
 {
 
     int LOAD_XDP = 0;
     struct bpf_object *obj;
     int prog_fd;
-    char filename[256];
+    struct bpf_map *curr_map = NULL;
     struct bpf_program *prog;
     int i;
     struct bpf_prog_load_attr prog_load_attr = {
         .prog_type  = BPF_PROG_TYPE_XDP,
-        .file = filename,
+        .file = file_name,
     };
 
 
-    snprintf(filename, 256, "sockex1_kern.o");
     if (LOAD_XDP) {
         if (bpf_prog_load_xattr(&prog_load_attr, &obj, &prog_fd)) {
             printf("XDP program load failed\n");
@@ -11197,31 +11230,76 @@ int extract()
         }
     }
     else {
-        obj = bpf_object__open_file(filename, NULL);
+       
+        
+        obj = bpf_object__open_file(file_name, NULL);
         if (libbpf_get_error(obj)) {
             printf("Program could not be opened\n");
             return 1;
         }
-        prog = bpf_object__find_program_by_title(obj, "socket1");
-        if (!prog) {
-            printf("Could not find program name\n");
-            bpf_object__close(obj);
+        
+        bpf_object__collect_relos(obj);
+       
+        /* 
+        
+        if (bpf_prog_load(file_name, BPF_PROG_TYPE_XDP,
+              &obj, &prog_fd)) {    
+            printf("Program could not be opened\n");
             return 1;
-        } 
-        printf("Extracted sec name: %s\n", prog->sec_name);  
-	struct bpf_insn* insns = prog->insns;
-	for (i = 0; i < prog->sec_insn_cnt; i++) {
-	    struct bpf_insn insn = insns[i];
-	    printf("%d %d %d %d %d \n", insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm);
-	}
-	struct bpf_map *maps = obj->maps;
-	for (i = 0; i < obj->nr_maps; i++) {
-	    struct bpf_map map = maps[i];
-	    struct bpf_map_def def = map.def;
-	    printf("%d %d %d %d %d\n", def.type, def.key_size, def.value_size, def.max_entries, def.map_flags);
-	}
-        bpf_object__close(obj);
+        }
+    */
     }
+    prog = bpf_object__find_program_by_title(obj, prog_name);
+    if (!prog) {
+        printf("Could not find program name\n");
+        bpf_object__close(obj);
+        return 1;
+    } 
+
+    printf("check 0\n");
+
+    struct bpf_insn* insns = prog->insns;
+    printf("Num insns: %ld\n", prog->sec_insn_cnt);
+    printf("check 1\n");
+    for (i = 0; i < prog->sec_insn_cnt; i++) {
+        struct bpf_insn insn = insns[i];
+        printf("%d %d %d %d %d \n", insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm);
+    }
+
+    printf("check 2\n");
+//    struct bpf_map *maps = obj->maps;
+//    printf("Num of maps: %ld\n", obj->nr_maps);
+//    for (i = 0; i < obj->nr_maps; i++) {
+//        struct bpf_map map = maps[i];
+//        struct bpf_map_def def = map.def;
+//        printf("%d %d %d %d %d\n", def.type, def.key_size, def.value_size, def.max_entries, def.map_flags);
+//    }
+//    int fd = bpf_object__find_map_fd_by_name(obj, "flow_ctx_table");
+//    printf("Map fd of flow_ctx_table: %d\n", fd );
+
+
+
+
+    write_insns(output_name, prog->sec_insn_cnt, insns);
+//    write_maps(output_name, obj->nr_maps, obj->maps);
+
+
+        if (bpf_prog_load(file_name, BPF_PROG_TYPE_SOCKET_FILTER,
+              &obj, &prog_fd)) {    
+            printf("Program could not be opened\n");
+            return 1;
+        }
+
+    printf("Num of maps = %ld\n", obj->nr_maps);
+    for (i = 0; i < obj->nr_maps; i++) 
+    {
+        curr_map = bpf_map__next(curr_map, obj);
+        struct bpf_map_def def = curr_map->def;
+        printf("%d %d %d %d %d\n", def.type, def.key_size, def.value_size, def.max_entries, def.map_flags);
+        printf("fd = %d\n", bpf_map__fd(curr_map));
+    }
+    bpf_object__close(obj);
+
     return 0;
 }
 
