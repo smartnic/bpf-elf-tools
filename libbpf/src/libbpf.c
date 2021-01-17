@@ -11190,6 +11190,7 @@ int write_insns(char* output_name, int num_insns, struct bpf_insn* insns)
         fprintf(readable_output_fp, "{%d %d %d %d %d}\n", insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm);
     }
     fclose(output_file_fp);
+    fclose(readable_output_fp);
     return 0;
 }
 
