@@ -11182,6 +11182,7 @@ int extract()
     int prog_fd;
     char filename[256];
     struct bpf_program *prog;
+    int i;
     struct bpf_prog_load_attr prog_load_attr = {
         .prog_type  = BPF_PROG_TYPE_XDP,
         .file = filename,
@@ -11201,15 +11202,27 @@ int extract()
             printf("Program could not be opened\n");
             return 1;
         }
-        prog = bpf_object__find_program_by_name(obj, "socket1");
+        prog = bpf_object__find_program_by_title(obj, "socket1");
         if (!prog) {
             printf("Could not find program name\n");
             bpf_object__close(obj);
             return 1;
         } 
         printf("Extracted sec name: %s\n", prog->sec_name);  
+	struct bpf_insn* insns = prog->insns;
+	for (i = 0; i < prog->sec_insn_cnt; i++) {
+	    struct bpf_insn insn = insns[i];
+	    printf("%d %d %d %d %d \n", insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm);
+	}
+	struct bpf_map *maps = obj->maps;
+	for (i = 0; i < obj->nr_maps; i++) {
+	    struct bpf_map map = maps[i];
+	    struct bpf_map_def def = map.def;
+	    printf("%d %d %d %d %d\n", def.type, def.key_size, def.value_size, def.max_entries, def.map_flags);
+	}
         bpf_object__close(obj);
     }
     return 0;
 }
+
 
