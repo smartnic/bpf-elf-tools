@@ -11230,24 +11230,29 @@ int extract(char* file_name, char* prog_name, char* output_name)
         }
     }
     else {
-       
-        
+         
         obj = bpf_object__open_file(file_name, NULL);
         if (libbpf_get_error(obj)) {
             printf("Program could not be opened\n");
             return 1;
         }
         
+        for (i = 0; i < obj->nr_maps; i++) {
+            // Manually setting fd since we're not actually
+            // loading the program
+            obj->maps[i].fd = i;
+        }
         bpf_object__collect_relos(obj);
-       
-        /* 
         
-        if (bpf_prog_load(file_name, BPF_PROG_TYPE_XDP,
+        /*   
+        if (bpf_prog_load(file_name, BPF_PROG_TYPE_UNSPEC,
               &obj, &prog_fd)) {    
             printf("Program could not be opened\n");
             return 1;
         }
-    */
+        bpf_object__elf_collect(obj);
+        */
+    
     }
     prog = bpf_object__find_program_by_title(obj, prog_name);
     if (!prog) {
@@ -11255,8 +11260,7 @@ int extract(char* file_name, char* prog_name, char* output_name)
         bpf_object__close(obj);
         return 1;
     } 
-
-    printf("check 0\n");
+    bpf_object__relocate_data(obj, prog);
 
     struct bpf_insn* insns = prog->insns;
     printf("Num insns: %ld\n", prog->sec_insn_cnt);
@@ -11266,29 +11270,15 @@ int extract(char* file_name, char* prog_name, char* output_name)
         printf("%d %d %d %d %d \n", insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm);
     }
 
-    printf("check 2\n");
-//    struct bpf_map *maps = obj->maps;
-//    printf("Num of maps: %ld\n", obj->nr_maps);
-//    for (i = 0; i < obj->nr_maps; i++) {
-//        struct bpf_map map = maps[i];
-//        struct bpf_map_def def = map.def;
-//        printf("%d %d %d %d %d\n", def.type, def.key_size, def.value_size, def.max_entries, def.map_flags);
-//    }
-//    int fd = bpf_object__find_map_fd_by_name(obj, "flow_ctx_table");
-//    printf("Map fd of flow_ctx_table: %d\n", fd );
 
-
-
+    struct reloc_desc* reloc_data = prog->reloc_desc;
+    for (i = 0; i < prog->nr_reloc; i++) {
+        struct reloc_desc curr_reloc = reloc_data[i];
+        printf("Reloc %d %d %d %d %d\n", curr_reloc.type, curr_reloc.insn_idx, curr_reloc.map_idx, curr_reloc.sym_off, curr_reloc.processed);
+    }
 
     write_insns(output_name, prog->sec_insn_cnt, insns);
-//    write_maps(output_name, obj->nr_maps, obj->maps);
-
-
-        if (bpf_prog_load(file_name, BPF_PROG_TYPE_SOCKET_FILTER,
-              &obj, &prog_fd)) {    
-            printf("Program could not be opened\n");
-            return 1;
-        }
+    write_maps(output_name, obj->nr_maps, obj->maps);
 
     printf("Num of maps = %ld\n", obj->nr_maps);
     for (i = 0; i < obj->nr_maps; i++) 
