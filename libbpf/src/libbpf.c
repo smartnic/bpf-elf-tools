@@ -11214,6 +11214,25 @@ int write_maps(char* output_name, int num_maps, struct bpf_map* maps)
     return 0;
 }
 
+int write_relocs(char* output_name, int num_relocs, struct reloc_desc* reloc_data) 
+{
+    int i;
+    char reloc_file[256];
+    FILE* reloc_file_fp;
+    snprintf(reloc_file, 256, "%s.rel", output_name);
+    reloc_file_fp = fopen(reloc_file, "w");
+    for (i = 0; i < num_relocs; i++) {
+        struct reloc_desc reloc = reloc_data[i];
+        char reloc_string[256];
+        snprintf(reloc_string, 256, "%s = %d, %s = %u, %s = %u, %s = %u\n", 
+             "type", reloc.type, "insn_idx", reloc.insn_idx, "map_idx", 
+            reloc.map_idx, "sym_off", reloc.sym_off);
+        fprintf(reloc_file_fp, "%s", reloc_string); 
+    }
+    fclose(reloc_file_fp);
+
+    return 0;
+}
 int extract(char* file_name, char* prog_name, char* output_name)
 {
 
@@ -11246,14 +11265,7 @@ int extract(char* file_name, char* prog_name, char* output_name)
     struct bpf_insn* insns = prog->insns;
     write_insns(output_name, prog->sec_insn_cnt, insns);
     write_maps(output_name, obj->nr_maps, obj->maps);
-
-    // Relocation data. 
-    // TODO: Use this code if reverse relocations need to be applied
-//    struct reloc_desc* reloc_data = prog->reloc_desc;
-//    for (i = 0; i < prog->nr_reloc; i++) {
-//        struct reloc_desc curr_reloc = reloc_data[i];
-//        printf("Reloc %d %d %d %d %d\n", curr_reloc.type, curr_reloc.insn_idx, curr_reloc.map_idx, curr_reloc.sym_off, curr_reloc.processed);
-//    }
+    write_relocs(output_name, prog->nr_reloc, prog->reloc_desc);
 
     bpf_object__close(obj);
 
