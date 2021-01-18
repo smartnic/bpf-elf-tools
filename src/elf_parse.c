@@ -104,7 +104,7 @@ void interpret_bpf_insns(struct bpf_insn ** prog, int prog_len)
         struct bpf_insn insn = (*prog)[i];
         // op:8, dst_reg:4, src_reg:4, off:16, imm:32
         printf("%d: {%d, %d, %d, %d, %d}\n", 
-            i, insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm);
+            i, insn.code, insn.dst_reg, insn.src_reg, insn.off, insn.imm);
     }
 }
 
@@ -124,7 +124,7 @@ void write_insns(struct bpf_insn ** prog, int prog_len, char* progname, char* fu
     struct bpf_insn insn;
     for (i = 0; i < prog_len / sizeof(struct bpf_insn); ++i) {
         insn = (*prog)[i];
-        struct bpf_insn test_insn = { insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm };
+        struct bpf_insn test_insn = { insn.code, insn.dst_reg, insn.src_reg, insn.off, insn.imm };
         // op:8, dst_reg:4, src_reg:4, off:16, imm:32
         fwrite(&test_insn, sizeof(struct bpf_insn), 1, bytecode_fp);
         fprintf(insns_fp, "{%d, %d, %d, %d, %d}, \n", insn.code, insn.dst_reg, insn.src_reg, insn.off, insn.imm);
