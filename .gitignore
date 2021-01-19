@@ -1,5 +1,7 @@
 
-src/elf_parse
+old-text-extractor/elf_extractor
+text-extractor/elf_extractor
 cscope.out
 *.maps
-*.ins
+*.insns
+*.rel
