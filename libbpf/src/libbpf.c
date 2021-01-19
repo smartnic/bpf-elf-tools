@@ -11205,7 +11205,7 @@ int write_maps(char* output_name, int num_maps, struct bpf_map* maps)
         struct bpf_map map = maps[i];
         char map_string[256];
         struct bpf_map_def def = map.def;
-        snprintf(map_string, 256, "%s { %s = %d, %s = %u, %s = %u, %s = %u, %s = %d\n", 
+        snprintf(map_string, 256, "%s { %s = %d, %s = %u, %s = %u, %s = %u, %s = %d }\n", 
             map.name, "type", def.type, "key_size", def.key_size, "value_size", 
             def.value_size, "max_entries", def.max_entries, "fd", map.fd);
         fprintf(output_file_fp, "%s", map_string); 
@@ -11224,8 +11224,10 @@ int write_relocs(char* output_name, int num_relocs, struct reloc_desc* reloc_dat
     for (i = 0; i < num_relocs; i++) {
         struct reloc_desc reloc = reloc_data[i];
         char reloc_string[256];
-        snprintf(reloc_string, 256, "%s = %d, %s = %u, %s = %u, %s = %u\n", 
-             "type", reloc.type, "insn_idx", reloc.insn_idx, "map_idx", 
+        char reloc_name[32];
+        snprintf(reloc_name, 32, "reloc_%d", i);
+        snprintf(reloc_string, 256, "%s { %s = %d, %s = %u, %s = %u, %s = %u }\n", 
+             reloc_name, "type", reloc.type, "insn_idx", reloc.insn_idx, "map_idx", 
             reloc.map_idx, "sym_off", reloc.sym_off);
         fprintf(reloc_file_fp, "%s", reloc_string); 
     }
