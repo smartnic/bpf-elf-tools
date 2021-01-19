@@ -5,7 +5,7 @@ LIBBPF_VERSION := $(shell \
 	sort -rV | head -n1 | cut -d'_' -f2)
 LIBBPF_MAJOR_VERSION := $(firstword $(subst ., ,$(LIBBPF_VERSION)))
 
-TOPDIR = ..
+TOPDIR = .
 
 INCLUDES := -I. -I$(TOPDIR)/include -I$(TOPDIR)/include/uapi 
 ALL_CFLAGS := $(INCLUDES)
@@ -33,7 +33,7 @@ SHARED_OBJDIR := $(OBJDIR)/sharedobjs
 STATIC_OBJDIR := $(OBJDIR)/staticobjs
 OBJS := bpf.o btf.o libbpf.o libbpf_errno.o netlink.o \
 	nlattr.o str_error.o libbpf_probes.o   \
-	 hashmap.o  bpf_load.o elf_parse.o
+	 hashmap.o  bpf_load.o elf_extract.o
 SHARED_OBJS := $(addprefix $(SHARED_OBJDIR)/,$(OBJS))
 STATIC_OBJS := $(addprefix $(STATIC_OBJDIR)/,$(OBJS))
 
@@ -121,7 +121,7 @@ install_pkgconfig: $(PC_FILE)
 	$(call do_install,$(PC_FILE),$(LIBDIR)/pkgconfig,644)
 
 clean:
-	rm -rf *.o *.a *.so *.so.* *.pc *.maps *.ins elf_parse $(SHARED_OBJDIR) $(STATIC_OBJDIR)
+	rm -rf *.o *.a *.so *.so.* *.pc *.maps *.ins elf_extract $(SHARED_OBJDIR) $(STATIC_OBJDIR)
 
 .PHONY: cscope tags
 cscope:
