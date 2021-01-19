@@ -152,7 +152,8 @@ void read_insns(char* full_progname)
 void fix_progname(char* progname, char* fixed_progname) 
 {
     char buf[50];
-    for (int i = 0; i < strlen(progname); ++i) {
+    int i;
+    for (i = 0; i < strlen(progname); ++i) {
         if (progname[i] == '/') buf[i] = '-';
         else buf[i] = progname[i];
     }

@@ -1,0 +1,8 @@
+*.o
+*.a
+/libbpf.pc
+/libbpf.so*
+/staticobjs
+/sharedobjs
+*.maps
+*.insns

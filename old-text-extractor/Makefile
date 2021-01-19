@@ -5,7 +5,7 @@ LIBBPF_VERSION := $(shell \
 	sort -rV | head -n1 | cut -d'_' -f2)
 LIBBPF_MAJOR_VERSION := $(firstword $(subst ., ,$(LIBBPF_VERSION)))
 
-TOPDIR = ..
+TOPDIR = .
 
 INCLUDES := -I. -I$(TOPDIR)/include -I$(TOPDIR)/include/uapi 
 ALL_CFLAGS := $(INCLUDES)
