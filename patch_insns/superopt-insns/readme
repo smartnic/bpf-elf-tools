@@ -1,0 +1,4 @@
+This folder contains superopt output files (i.e., optimized programs) for each benchmark. Each benchmark has 16 subfolders which store output files of 16 parameters respectively. In each parameter folder, there are top 10 optimized programs' output files. Each optimized program has three files:
+1. *.insns: program binary form, used to construct .o file which is the input of throughput experiment and so con
+2. *.bpf_insns: program's bpf instruction form, the input of real runtime measurement experiment
+3. *.desc: contains perf_cost and readable form of the program
