@@ -59,7 +59,7 @@ for program_dir in superopt-insns/*; do
         # The ##*/ part trims the preceding path from the directory
         # name
         mkdir -p $output_dir/${program_dir##*/}/$i
-        for j in {1..10}; do
+        for j in {0..9}; do
             insns=$program_dir/$i/output$j.insns
             if [ ! -f $insns ]; then
                 continue
