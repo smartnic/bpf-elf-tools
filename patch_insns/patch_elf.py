@@ -6,13 +6,15 @@ import argparse
 import array
 import sys
 
+DEBUG = False
 
 def patch_insns(output_file, new_insns_file_name):
 
     new_insns_file = open(new_insns_file_name, 'rb') 
     new_insns = new_insns_file.read()
-    print('Patching in new insns:')
-    print(new_insns)
+    if DEBUG:
+        print('Patching in new insns:')
+        print(new_insns)
     byte_array = bytearray(new_insns)
     output_file.write(byte_array)
 
@@ -122,14 +124,9 @@ def main():
             help='Output file name')
 
     raw_args = parser.parse_args(argv[1:])
-    '''
+
     # Bytes in instructions must be equivalent to the number 
     # of bytes in the section of the initial .o file
-    if len(sys.argv) != 4 and len(sys.argv) != 5:
-        print('Usage: <ELF file> <file w/ new insns> <name of section> <preceding section names (OPTIONAL)>')
-        sys.exit(1)
-    '''
-    
     preceding_sections = parse_section_string(raw_args.sections)
 
     read_elf_file_header(raw_args.elf_file, raw_args.output)
