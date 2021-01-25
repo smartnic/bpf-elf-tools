@@ -1,6 +1,6 @@
 #!/bin/bash
 
-supported_progs=("xdp1_kern" "xdp2_kern" "xdp_pktcntr" "xdp_redirect" "xdp_router_ipv4" "xdp_fw" "xdp_map_access" "xdp_fwd_kern")
+supported_progs=("xdp1_kern" "xdp2_kern" "xdp_pktcntr" "xdp_redirect" "xdp_router_ipv4" "xdp_fw_runtime" "xdp_map_access" "xdp_fwd_kern")
 
 benchmarks_dir=/users/mdw362/bpf-benchmarks 
 ebpf_samples=$benchmarks_dir/ebpf-samples/ubuntu-20.04-clang9-O2
@@ -51,7 +51,7 @@ function find_program {
     elif [[ $dir_name =~ ${supported_progs[7]} ]]; then
         section_name="xdp_fwd"
         current_program="xdp_fwd_kern"
-        program=$simple_fw_samples/$current_program.o
+        program=$ebpf_samples/$current_program.o
 
     else
         section_name=""
