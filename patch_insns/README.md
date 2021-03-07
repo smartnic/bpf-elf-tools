@@ -7,7 +7,7 @@ Creates a new ELF file with new instructions patched into a section of interest.
 
 Install pyelftools
 
-    pip3 install pyelftools
+    pip3 install -r requirements.txt 
 
 ### Usage
 
@@ -62,5 +62,11 @@ To patch in new insns manually, run:
 Then edit
 
     hexedit sample-insns/sockex1.insns
+
+### Test
+
+To execute tests:
+
+    ./test_patch_elf.sh
 
 

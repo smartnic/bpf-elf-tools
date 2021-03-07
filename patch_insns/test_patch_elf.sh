@@ -30,7 +30,7 @@ function perform_test {
         python3 patch_elf.py $1 $2 $3 -o $4 -s "$5" > /dev/null
     fi
     is_patcher_successful $1 
-    llvm-objdump-10 -d $4 > /dev/null
+    llvm-objdump-9 -d $4 > /dev/null
     is_output_elf_correct $1
 
 }
