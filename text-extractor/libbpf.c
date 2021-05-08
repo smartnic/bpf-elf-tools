@@ -11173,15 +11173,33 @@ void bpf_object__destroy_skeleton(struct bpf_object_skeleton *s)
 	free(s);
 }
 
+void fix_progname(char* progname, char* fixed_progname) 
+{
+    char buf[128];
+    int i;
+    for (i = 0; i < strlen(progname); ++i) {
+        if (progname[i] == '/') {
+            buf[i] = '-';
+        } else {
+            buf[i] = progname[i];
+        }
+    }
+    buf[strlen(progname)] = '\0';
+    strcpy(fixed_progname, buf);
+}
+ 
+
 int write_insns(char* output_name, int num_insns, struct bpf_insn* insns)
 {
     int i;
-    char output_insns_file[256];
-    char readable_insns_file[256];
+    char output_insns_file[128];
+    char readable_insns_file[128];
+    char *fixed_output_name = malloc(sizeof(char) * 128);
     FILE* output_file_fp;
     FILE* readable_output_fp;
-    snprintf(output_insns_file, 256, "%s.insns", output_name);
-    snprintf(readable_insns_file, 256, "%s.txt", output_name);
+    fix_progname(output_name, fixed_output_name);
+    snprintf(output_insns_file, 128, "%s.insns", fixed_output_name);
+    snprintf(readable_insns_file, 128, "%s.txt", fixed_output_name);
     output_file_fp = fopen(output_insns_file, "w");
     readable_output_fp = fopen(readable_insns_file, "w");
     for (i = 0; i < num_insns; i++) {
@@ -11189,6 +11207,7 @@ int write_insns(char* output_name, int num_insns, struct bpf_insn* insns)
         fwrite(&insn, sizeof(struct bpf_insn), 1, output_file_fp);
         fprintf(readable_output_fp, "{%d %d %d %d %d}\n", insn.code, insn.src_reg, insn.dst_reg, insn.off, insn.imm);
     }
+    free(fixed_output_name);
     fclose(output_file_fp);
     fclose(readable_output_fp);
     return 0;
@@ -11197,19 +11216,22 @@ int write_insns(char* output_name, int num_insns, struct bpf_insn* insns)
 int write_maps(char* output_name, int num_maps, struct bpf_map* maps) 
 {
     int i;
-    char output_insns_file[256];
+    char output_insns_file[128];
+    char *fixed_output_name = malloc(sizeof(char) * 128);
     FILE* output_file_fp;
-    snprintf(output_insns_file, 256, "%s.maps", output_name);
+    fix_progname(output_name, fixed_output_name);
+    snprintf(output_insns_file, 128, "%s.maps", fixed_output_name);
     output_file_fp = fopen(output_insns_file, "w");
     for (i = 0; i < num_maps; i++) {
         struct bpf_map map = maps[i];
-        char map_string[256];
+        char map_string[128];
         struct bpf_map_def def = map.def;
-        snprintf(map_string, 256, "%s { %s = %d, %s = %u, %s = %u, %s = %u, %s = %d }\n", 
+        snprintf(map_string, 128, "%s { %s = %d, %s = %u, %s = %u, %s = %u, %s = %d }\n", 
             map.name, "type", def.type, "key_size", def.key_size, "value_size", 
             def.value_size, "max_entries", def.max_entries, "fd", map.fd);
         fprintf(output_file_fp, "%s", map_string); 
     }
+    free(fixed_output_name);
     fclose(output_file_fp);
     return 0;
 }
@@ -11217,25 +11239,28 @@ int write_maps(char* output_name, int num_maps, struct bpf_map* maps)
 int write_relocs(char* output_name, int num_relocs, struct reloc_desc* reloc_data) 
 {
     int i;
-    char reloc_file[256];
+    char reloc_file[128];
+    char *fixed_output_name = malloc(sizeof(char) * 128);
     FILE* reloc_file_fp;
-    snprintf(reloc_file, 256, "%s.rel", output_name);
+    fix_progname(output_name, fixed_output_name);
+    snprintf(reloc_file, 128, "%s.rel", fixed_output_name);
     reloc_file_fp = fopen(reloc_file, "w");
     for (i = 0; i < num_relocs; i++) {
         struct reloc_desc reloc = reloc_data[i];
-        char reloc_string[256];
+        char reloc_string[128];
         char reloc_name[32];
         snprintf(reloc_name, 32, "reloc_%d", i);
-        snprintf(reloc_string, 256, "%s { %s = %d, %s = %u, %s = %u, %s = %u }\n", 
+        snprintf(reloc_string, 128, "%s { %s = %d, %s = %u, %s = %u, %s = %u }\n", 
              reloc_name, "type", reloc.type, "insn_idx", reloc.insn_idx, "map_idx", 
             reloc.map_idx, "sym_off", reloc.sym_off);
         fprintf(reloc_file_fp, "%s", reloc_string); 
     }
+    free(fixed_output_name);
     fclose(reloc_file_fp);
-
     return 0;
 }
-int extract(char* file_name, char* prog_name, char* output_name)
+
+int extract(char* file_name)
 {
 
     struct bpf_object *obj;
@@ -11244,10 +11269,9 @@ int extract(char* file_name, char* prog_name, char* output_name)
 
     obj = bpf_object__open_file(file_name, NULL);
     if (libbpf_get_error(obj)) {
-        printf("libbpf could not open file %s\n", file_name);
+        printf("ERROR: libbpf could not open file %s\n", file_name);
         return 1;
     }
-    
     for (i = 0; i < obj->nr_maps; i++) {
         // Manually setting fd since we're not actually
         // loading the program
@@ -11255,22 +11279,22 @@ int extract(char* file_name, char* prog_name, char* output_name)
     }
     // Apply relocations
     bpf_object__collect_relos(obj);
+   
+    for (i = 0; i < obj->nr_programs; i++) {
+        prog = &obj->programs[i];
+        if (!prog) {
+            printf("ERROR: Program could not be opened\n");
+            bpf_object__close(obj);
+            return 1;
+        }
+        bpf_object__relocate_data(obj, prog);
+        struct bpf_insn* insns = prog->insns;
 
-    prog = bpf_object__find_program_by_title(obj, prog_name);
-    if (!prog) {
-        printf("Could not find program name %s\n", prog_name);
-        bpf_object__close(obj);
-        return 1;
-    } 
-    bpf_object__relocate_data(obj, prog);
-
-    struct bpf_insn* insns = prog->insns;
-    write_insns(output_name, prog->sec_insn_cnt, insns);
-    write_maps(output_name, obj->nr_maps, obj->maps);
-    write_relocs(output_name, prog->nr_reloc, prog->reloc_desc);
-
+        write_insns(prog->sec_name, prog->sec_insn_cnt, insns);
+        write_relocs(prog->sec_name, prog->nr_reloc, prog->reloc_desc);
+        write_maps(prog->sec_name, obj->nr_maps, obj->maps);
+    }
     bpf_object__close(obj);
-
     return 0;
 }
 
