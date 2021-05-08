@@ -14,6 +14,9 @@ int main(int argc, char** argv)
         return 1;
     }
     char* file_name = argv[1];
-    extract(file_name);
+    if (extract(file_name)) {
+        return 2;
+    }
     return 0;
 }
+
