@@ -755,7 +755,7 @@ LIBBPF_API void bpf_object__destroy_skeleton(struct bpf_object_skeleton *s);
 
 LIBBPF_API int write_insns(char* output_name, int num_insns, struct bpf_insn* insns);
 LIBBPF_API int write_maps(char* output_name, int num_maps, struct bpf_map* maps);
-LIBBPF_API int extract(char* file_name, char* prog_name, char* output_name);
+LIBBPF_API int extract(char* file_name);
 
 enum libbpf_tristate {
 	TRI_NO = 0,
