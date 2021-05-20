@@ -14,7 +14,10 @@ def clear_reloc_insns(byte_array):
     # 15 is decimal for 00001111; eliminate the 4 src reg bits
     bitmask = 15
     c = 0
+    # Index of src/dst reg
     src_clear_idx = -1
+    # Index range from imm value of lddw insn all the way through
+    # the entirety of the next insn
     insn_clear_idxs = (-1, -1) 
     for i,byte in enumerate(byte_array):
         if i == src_clear_idx:
@@ -25,7 +28,7 @@ def clear_reloc_insns(byte_array):
         if i % 8 == 0:
             if byte == lddw_mnemonic:
                 src_clear_idx = i + 1
-                insn_clear_idxs = (i + 8, i + 16)
+                insn_clear_idxs = (i + 4, i + 16)
 
 def patch_insns(output_file, new_insns_file_name, remove_reloc):
 
