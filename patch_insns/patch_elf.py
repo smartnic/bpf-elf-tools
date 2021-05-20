@@ -7,17 +7,37 @@ import array
 import sys
 
 
-def patch_insns(output_file, new_insns_file_name):
+def clear_reloc_insns(byte_array):
+    """ Clears the src reg that is set by the text-extractor relocation """
+    # 24 is opcode of lddw
+    lddw_mnemonic = 24
+    # 15 is decimal for 00001111; eliminate the 4 src reg bits
+    bitmask = 15
+    c = 0
+    src_clear_idx = -1
+    insn_clear_idxs = (-1, -1) 
+    for i,byte in enumerate(byte_array):
+        if i == src_clear_idx:
+            byte_array[i] &= bitmask
+        elif i >= insn_clear_idxs[0] and i < insn_clear_idxs[1]:
+            byte_array[i] = 0
+            continue
+        if i % 8 == 0:
+            if byte == lddw_mnemonic:
+                src_clear_idx = i + 1
+                insn_clear_idxs = (i + 8, i + 16)
+
+def patch_insns(output_file, new_insns_file_name, remove_reloc):
 
     new_insns_file = open(new_insns_file_name, 'rb') 
     new_insns = new_insns_file.read()
-#    print('Patching in new insns:')
-#    print(new_insns)
     byte_array = bytearray(new_insns)
+    if remove_reloc:
+        clear_reloc_insns(byte_array)
     output_file.write(byte_array)
 
 def read_elf_sections(elf_file_name, new_insns_file_name, section_to_replace, 
-                        preceding_sections, output_file_name):
+                    preceding_sections, output_file_name, remove_reloc):
 
     offset = 0
 
@@ -42,7 +62,7 @@ def read_elf_sections(elf_file_name, new_insns_file_name, section_to_replace,
                     sys.exit(1)
 
             offset += section_of_interest['sh_size']
-            patch_insns(output_file, new_insns_file_name)
+            patch_insns(output_file, new_insns_file_name, remove_reloc)
         else:
             print('Section ', section_to_replace, ' could not be found. New insns not patched into resulting ELF')
             sys.exit(1)
@@ -121,6 +141,10 @@ def main():
             type=str,
             default='out.o',
             help='Output file name')
+    parser.add_argument(
+            '--remove-reloc',
+            action='store_true',
+            help='Set to remove relocations')
 
     raw_args = parser.parse_args(argv[1:])
     '''
@@ -131,7 +155,7 @@ def main():
 
     read_elf_file_header(raw_args.elf_file, raw_args.output)
     read_elf_sections(raw_args.elf_file, raw_args.new_insns, raw_args.section_name, 
-                        preceding_sections, raw_args.output)
+                        preceding_sections, raw_args.output, raw_args.remove_reloc)
 
 if __name__ == '__main__':
     main()

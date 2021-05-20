@@ -31,7 +31,7 @@ Install pyelftools
                             of interest
       -o OUTPUT, --output OUTPUT
                             Output file name
-
+      --remove-reloc        Set to remove relocation
 
 
 Example using sockex1:
