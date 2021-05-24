@@ -15,7 +15,9 @@ def clear_reloc_insns(byte_array):
     hide_src_bitmask = 15
     # 240 is decimal for 11110000; eliminate the 4 dst reg bits
     hide_dst_bitmask = 240
-    c = 0
+    # src reg is 1 for ldmapfd; check for 16 since the binary representation
+    # is 00010000
+    ldmapfd_src_reg = 16 
     # Index of src/dst reg
     src_clear_idx = -1
     # Index range from imm value of lddw insn all the way through
@@ -24,9 +26,11 @@ def clear_reloc_insns(byte_array):
     for i,byte in enumerate(byte_array):
         if i == src_clear_idx:
             # If src reg is not 1, it's not ldmapfd -- don't undo anything 
-            if byte_array[i] & hide_dst_bitmask != 1:
+            print('byte_array[i] = ', byte_array[i])
+            print('byte_array[i] & bitmask = ', (byte_array[i] & hide_dst_bitmask))
+            if byte_array[i] & hide_dst_bitmask != ldmapfd_src_reg:
                 src_clear_idx = -1
-                src_clear_idxs = (-1, -1)
+                insn_clear_idxs = (-1, -1)
                 continue
             byte_array[i] &= hide_src_bitmask
         elif i >= insn_clear_idxs[0] and i < insn_clear_idxs[1]:
