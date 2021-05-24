@@ -26,8 +26,6 @@ def clear_reloc_insns(byte_array):
     for i,byte in enumerate(byte_array):
         if i == src_clear_idx:
             # If src reg is not 1, it's not ldmapfd -- don't undo anything 
-            print('byte_array[i] = ', byte_array[i])
-            print('byte_array[i] & bitmask = ', (byte_array[i] & hide_dst_bitmask))
             if byte_array[i] & hide_dst_bitmask != ldmapfd_src_reg:
                 src_clear_idx = -1
                 insn_clear_idxs = (-1, -1)
