@@ -10,10 +10,14 @@ import sys
 def clear_reloc_insns(byte_array):
     """ Clears the src reg that is set by the text-extractor relocation """
     # 24 is opcode of lddw
-    lddw_mnemonic = 24
+    lddw_opcode = 24
     # 15 is decimal for 00001111; eliminate the 4 src reg bits
-    bitmask = 15
-    c = 0
+    hide_src_bitmask = 15
+    # 240 is decimal for 11110000; eliminate the 4 dst reg bits
+    hide_dst_bitmask = 240
+    # src reg is 1 for ldmapfd; check for 16 since the binary representation
+    # is 00010000
+    ldmapfd_src_reg = 16 
     # Index of src/dst reg
     src_clear_idx = -1
     # Index range from imm value of lddw insn all the way through
@@ -21,12 +25,17 @@ def clear_reloc_insns(byte_array):
     insn_clear_idxs = (-1, -1) 
     for i,byte in enumerate(byte_array):
         if i == src_clear_idx:
-            byte_array[i] &= bitmask
+            # If src reg is not 1, it's not ldmapfd -- don't undo anything 
+            if byte_array[i] & hide_dst_bitmask != ldmapfd_src_reg:
+                src_clear_idx = -1
+                insn_clear_idxs = (-1, -1)
+                continue
+            byte_array[i] &= hide_src_bitmask
         elif i >= insn_clear_idxs[0] and i < insn_clear_idxs[1]:
             byte_array[i] = 0
             continue
         if i % 8 == 0:
-            if byte == lddw_mnemonic:
+            if byte == lddw_opcode:
                 src_clear_idx = i + 1
                 insn_clear_idxs = (i + 4, i + 16)
 
